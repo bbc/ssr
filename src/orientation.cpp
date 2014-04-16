@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -30,12 +31,17 @@
 #include <ostream>
 
 #include "orientation.h"
-#include "apf/math.h"
+#include "position.h"
+#include "apf/math.h" // cos(), sin(), acos()
 #include "ssr_global.h"
 
-/// ctor. @param azimuth azimuth (in degrees)
-Orientation::Orientation(const float azimuth) :
-  azimuth(azimuth)
+/** ctor.
+ * @param azimuth azimuth (in degrees)
+ * @param elevation elevation (in degrees)
+ */
+Orientation::Orientation(const float azimuth, const float elevation) :
+  azimuth(azimuth),
+  elevation(elevation)
 {}
 
 /** - operator.
@@ -43,14 +49,14 @@ Orientation::Orientation(const float azimuth) :
  **/
 Orientation operator-(const Orientation& lhs, const Orientation& rhs)
 {
-  return Orientation(lhs.azimuth - rhs.azimuth);
+  return Orientation(lhs.azimuth - rhs.azimuth, lhs.elevation - rhs.elevation);
 }
 
 /** + operator.
  **/
 Orientation operator+(const Orientation& lhs, const Orientation& rhs)
 {
-  return Orientation(lhs.azimuth + rhs.azimuth);
+  return Orientation(lhs.azimuth + rhs.azimuth, lhs.elevation + rhs.elevation);
 }
 
 /** += operator.
@@ -60,6 +66,7 @@ Orientation operator+(const Orientation& lhs, const Orientation& rhs)
 Orientation& Orientation::operator+=(const Orientation& other)
 {
   azimuth += other.azimuth;
+  elevation += other.elevation;
   return *this;
 }
 
@@ -70,23 +77,38 @@ Orientation& Orientation::operator+=(const Orientation& other)
 Orientation& Orientation::operator-=(const Orientation& other)
 {
   azimuth -= other.azimuth;
+  elevation -= other.elevation;
   return *this;
+}
+
+/** convert the orientation given by the orientation angles (yaw,pitch) to a
+ * Position unit-length look vector.
+ * @return Position with the corresponding unit-length 3D look vector
+ * @warning this is not really a position, just a vector (maybe reconsider?)
+ **/
+Position Orientation::look_vector() const
+{
+  // angles phi and theta in radians!
+  float phi = apf::math::deg2rad(azimuth);
+  float theta = apf::math::deg2rad(elevation);
+  return Position(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta));
 }
 
 /** ._
- * @param angle angle in degrees.
+ * @param yaw yaw rotation angle in degrees.
+ * @param pitch pitch rotation angle in degrees.
  * @return the resulting orientation
  **/
-Orientation& Orientation::rotate(float angle)
+Orientation& Orientation::rotate(float yaw, float pitch)
 {
-  this->azimuth += angle;
+  this->azimuth += yaw;
+  this->elevation += pitch;
   return *this;
 }
 
-// this is only a 2D implementation!
 Orientation& Orientation::rotate(const Orientation& rotation)
 {
-  return this->rotate(rotation.azimuth);
+  return this->rotate(rotation.azimuth, rotation.elevation);
 }
 
 /** _.
@@ -94,17 +116,22 @@ Orientation& Orientation::rotate(const Orientation& rotation)
  * @param b Another orientation
  * @return Angle between the two orientations in radians. If the angle of @a b
  * is bigger than the angle of @a a, the result is negative.
- * @warning 2D implementation!
  **/
 float angle(const Orientation& a, const Orientation& b)
 {
-  return apf::math::deg2rad(a.azimuth - b.azimuth);
+  // angle between two vectors is arccos(dot product / mag*mag)
+  Position a_vec = a.look_vector();
+  Position b_vec = b.look_vector();
+  float inner_product = a_vec.x * b_vec.x + a_vec.y * b_vec.y + a_vec.z * b_vec.z;
+  return acos(inner_product / (a_vec.length() * b_vec.length()));
+  // or
+  // return angle(a.look_vector(), b.look_vector()); // see Position.h
 }
 
 /// output stream operator (<<)
 std::ostream& operator<<(std::ostream& stream, const Orientation& orientation)
 {
-  stream << "azimuth = " << orientation.azimuth;
+  stream << "azimuth = " << orientation.azimuth << ", elevation = " << orientation.elevation;
   return stream;
 }
 

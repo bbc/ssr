@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -68,10 +69,10 @@ DirectionalPoint& DirectionalPoint::operator-=(const DirectionalPoint& other)
  * \par Algorithm
  * The plane is defined by the DirectionalPoint (Position and Orientation)
  * properties of *this (=the current object) where its Position is the point
- * \f$\displaystyle\mathbf{p}={p_x \choose p_y}\f$ somewhere on
+ * \f$\displaystyle\mathbf{p}={p_x \choose p_y \choose p_z}\f$ somewhere on
  * the plane and its Orientation is its normal vector \f$\mathbf{n}\f$.
  * The point we want to get the distance to is given by
- * \f$\displaystyle\mathbf{r}={r_x \choose r_y}\f$.
+ * \f$\displaystyle\mathbf{r}={r_x \choose r_y \choose r_z}\f$.
  * The distance \f$l\f$ is calculated as the inner product of the vector from
  * \f$\mathbf{p}\f$ to \f$\mathbf{r}\f$ with the normal vector \f$\mathbf{n}\f$.
  * \par
@@ -80,7 +81,7 @@ DirectionalPoint& DirectionalPoint::operator-=(const DirectionalPoint& other)
  * Note that the distance \f$l\f$ can be negative, if the point \f$\mathbf{r}\f$
  * is in the half-space opposite to the normal vector.
  * \par
- * Because we have the normal vector only as an angle (its length is irrelevant
+ * Because we have the normal vector only as two angles (its length is irrelevant
  * to us), we calculate the inner
  * product as the product of the absolute values and the angle between the two
  * vectors. Therefore, the distance is given as
@@ -88,8 +89,9 @@ DirectionalPoint& DirectionalPoint::operator-=(const DirectionalPoint& other)
  * between \f$ (\mathbf{r} - \mathbf{p}) \f$ and \f$ \mathbf{n} \f$.
  *
  * \par finally, the equation:
- * \f$ \displaystyle l = \sqrt{(r_x-p_x)^2+(r_y-p_y)^2}
- * \cos\left(\mathop{\mathrm{atan}}\left(\frac{r_y-p_y}{r_x-p_x}\right) -
+ * \f$ \displaystyle l = \sqrt{(r_x-p_x)^2+(r_y-p_y)^2+(r_z-p_z)^2}
+ * \cos\left(\mathop{\mathrm{acos}}\left(\frac{p_x(r_x-p_x) + p_y(r_y-p_y) + p_z(r_z-p_z)}
+ * {\sqrt{p_x^2+p_y^2+p_z^2}\sqrt{(r_x-p_x)^2+(r_y-p_y)^2+(r_z-p_z)^2}}\right) -
  * \phi_\mathbf{n}\right) \f$
  * \par
  * The order of the subtrahends doesn't matter because the cosine function is
@@ -114,15 +116,16 @@ float DirectionalPoint::plane_to_point_distance(const Position& point) const
 }
 
 /** ._
- * @param angle angle in degrees.
+ * @param yaw yaw rotation angle in degrees.
+ * @param pitch pitch rotation angle in degrees.
  * @return the resulting point
  * @warning only possible for 2D! For a more general application use the
  * overloaded member function rotate(const Orientation&).
  **/
-DirectionalPoint& DirectionalPoint::rotate(float angle)
+DirectionalPoint& DirectionalPoint::rotate(float yaw, float pitch)
 {
-  this->position.rotate(angle);
-  this->orientation.rotate(angle);
+  this->position.rotate(yaw, pitch);
+  this->orientation.rotate(yaw, pitch);
   return *this;
 }
 

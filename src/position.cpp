@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -34,20 +35,22 @@
 #include "orientation.h"
 #include "apf/math.h"
 
-Position::Position(const float x, const float y) :
+Position::Position(const float x, const float y, const float z) :
   x(x),
-  y(y)
+  y(y),
+  z(z)
 {}
 
 Position Position::operator-()
 {
-  return Position(-this->x, -this->y);
+  return Position(-this->x, -this->y, -this->z);
 }
 
 Position& Position::operator+=(const Position& other)
 {
   x += other.x;
   y += other.y;
+  z += other.z;
   return *this;
 }
 
@@ -55,12 +58,13 @@ Position& Position::operator-=(const Position& other)
 {
   x -= other.x;
   y -= other.y;
+  z -= other.z;
   return *this;
 }
 
 bool Position::operator==(const Position& other) const
 {
-  return x == other.x && y == other.y;
+  return x == other.x && y == other.y && z == other.z;
 }
 
 bool Position::operator!=(const Position& other) const
@@ -68,37 +72,37 @@ bool Position::operator!=(const Position& other) const
   return !this->operator==(other);
 }
 
-/** convert the orientation given by the position vector (x,y) to an
+/** convert the orientation given by the position vector (x,y,z) to an
  * Orientation.
  * @return Orientation with the corresponding azimuth value
- * @warning Works only for 2D!
  **/
 Orientation Position::orientation() const
 {
-  return Orientation(atan2(y, x) / apf::math::pi_div_180<float>());
+  return Orientation(apf::math::rad2deg(atan2(y, x)), apf::math::rad2deg(atan2(z,sqrt(apf::math::square(x) + apf::math::square(y)))));
 }
 
 float Position::length() const
 {
-  return sqrt(apf::math::square(x) + apf::math::square(y));
+  return sqrt(apf::math::square(x) + apf::math::square(y) + apf::math::square(z));
 }
 
 /** ._
- * @param angle angle in degrees.
+ * @param yaw yaw rotation angle in degrees.
+ * @param pitch pitch rotation angle in degrees.
  * @return the resulting position
  **/
-Position& Position::rotate(float angle)
+Position& Position::rotate(float yaw, float pitch)
 {
-  // angle phi in radians!
-  float phi = apf::math::deg2rad(this->orientation().azimuth + angle);
+  // angles phi and theta in radians!
+  float phi = apf::math::deg2rad(this->orientation().azimuth + yaw);
+  float theta = apf::math::deg2rad(this->orientation().elevation + pitch);
   float radius = this->length();
-  return *this = Position(radius * cos(phi), radius * sin(phi));
+  return *this = Position(radius * cos(theta) * cos(phi), radius * cos(theta) * sin(phi));
 }
 
-// this is a 2D implementation!
 Position& Position::rotate(const Orientation& rotation)
 {
-  return this->rotate(rotation.azimuth);
+  return this->rotate(rotation.azimuth, rotation.elevation);
 }
 
 Position operator-(const Position& a, const Position& b)
@@ -120,12 +124,23 @@ Position operator+(const Position& a, const Position& b)
  **/
 float angle(const Position& point, const Orientation& orientation)
 {
-  return angle(point.orientation(), orientation);
+  return angle(point, orientation.look_vector());
+}
+
+/** _.
+ * @param a
+ * @param b
+ * @return Angle in radians.
+ **/
+float angle(const Position& a, const Position& b)
+{
+  float inner_product = a.x * b.x + a.y * b.y + a.z * b.z;
+  return acos(inner_product / (a.length() * b.length()));
 }
 
 std::ostream& operator<<(std::ostream& stream, const Position& position)
 {
-  stream << "x = " << position.x << ", y = " << position.y;
+  stream << "x = " << position.x << ", y = " << position.y << ", z = " << position.z;
   return stream;
 }
 

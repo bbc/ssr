@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -32,15 +33,18 @@
 
 #include <iosfwd>
 
+class Position; // forward declaration
+
 /** Geometric representation of a orientation.
  * For now, only azimuth value is handled.
  **/
 struct Orientation
 {
   // the default orientation is in negative y-direction (facing the listener)
-  explicit Orientation(const float azimuth = 0);
+  explicit Orientation(const float azimuth = 0.f, const float elevation = 0.f);
 
   float azimuth; ///< (=yaw) azimuth (in degrees)
+  float elevation; ///< (=pitch) elevation (in degrees)
 
   friend Orientation operator-(const Orientation& lhs, const Orientation& rhs);
   friend Orientation operator+(const Orientation& lhs, const Orientation& rhs);
@@ -48,8 +52,10 @@ struct Orientation
   Orientation& operator+=(const Orientation& other);
   Orientation& operator-=(const Orientation& other);
 
+  Position look_vector() const;
+
   /// turn
-  Orientation& rotate(float angle);
+  Orientation& rotate(float yaw, float pitch = 0.f);
   Orientation& rotate(const Orientation& rotation);
 
   friend std::ostream& operator<<(std::ostream& stream,
@@ -63,7 +69,7 @@ struct Orientation
   template <typename T>
   friend Orientation operator/(const Orientation& a, const T& b)
   {
-    return Orientation(a.azimuth / b);
+    return Orientation(a.azimuth / b, a.elevation / b);
   }
 };
 

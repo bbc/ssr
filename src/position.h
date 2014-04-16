@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -46,16 +47,17 @@ struct Position
    * @param x x coordinate (in meters)
    * @param y y coordinate (in meters)
    **/
-  explicit Position(const float x = 0, const float y = 0);
+  explicit Position(const float x = 0.f, const float y = 0.f, const float z = 0.f);
 
   float x; ///< x coordinate (in meters)
   float y; ///< y coordinate (in meters)
+  float z; ///< z coordinate (in meters)
 
   /// length of the position vector
   float length() const;
 
   /// turn around the origin
-  Position& rotate(float angle);
+  Position& rotate(float yaw, float pitch = 0.f);
   Position& rotate(const Orientation& rotation);
 
   Orientation orientation() const;
@@ -85,13 +87,18 @@ struct Position
   template <typename T>
   friend Position operator/(const Position& a, const T& b)
   {
-    return Position(a.x / b, a.y / b);
+    return Position(a.x / b, a.y / b, a.z / b);
   }
 };
 
 /// Calculate the angle between the position vector of @a point and the
 /// orientation @a orientation.
 float angle(const Position& point, const Orientation& orientation);
+// TODO: declare angle() also as friend of Position?
+
+/// Calculate the angle between the position vector of @a a and the
+/// position vector of @a b.
+float angle(const Position& a, const Position& b);
 // TODO: declare angle() also as friend of Position?
 
 #endif

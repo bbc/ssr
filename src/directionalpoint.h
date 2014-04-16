@@ -2,6 +2,7 @@
  * Copyright © 2012-2014 Institut für Nachrichtentechnik, Universität Rostock *
  * Copyright © 2006-2012 Quality & Usability Lab,                             *
  *                       Telekom Innovation Laboratories, TU Berlin           *
+ * Copyright © 2014 British Broadcasting Corporation                         *
  *                                                                            *
  * This file is part of the SoundScape Renderer (SSR).                        *
  *                                                                            *
@@ -49,7 +50,7 @@ struct DirectionalPoint
   /// Distance between a plane (*this) and a point
   float plane_to_point_distance(const Position& point) const;
 
-  DirectionalPoint& rotate(float angle); ///< rotate around the origin
+  DirectionalPoint& rotate(float yaw, float pitch = 0.f); ///< rotate around the origin
   /// rotate around the origin
   DirectionalPoint& rotate(const Orientation& rotation);
   /// move and rotate
